@@ -77,15 +77,15 @@ static NSString * _selectedScreenSaverBundle           = nil;
 
 enum {
     kScreensaverEnableToggle=0,
-//    kScreensaverTimeout,
+    kScreensaverTimeout,
     kScreensaverSelectFolder,
     kScreensaverPreview,
     kScreensaverOptions,
         
 };
-enum  {
-    kScreensaverTimeout=100
-};
+//enum  {
+//    kScreensaverTimeout=100
+//};
 @implementation ScreensaverCustomSettingsController
 -(void)reload
 {
@@ -113,9 +113,9 @@ enum  {
             case kScreensaverSelectFolder:
                 [asset release];
                 return [[BRMediaPreviewControlFactory factory] previewControlForAssets:[SMFPhotoMethods mediaAssetsForPath:[PREFS objectForKey:kCustomFolderString]]];
-                break;
             case kScreensaverTimeout:
                 [asset setTitle:@"ScreenSaver Timeout"];
+                break;
                 //[asset setSummary:@"T"];
             case kScreensaverPreview:
                 [asset setTitle:@"Start ScreenSaver"];
@@ -147,25 +147,23 @@ enum  {
 { 
     if (row<kScreensaverOptions) 
     {
+        SMFMenuItem *it = [SMFMenuItem menuItem];
         switch (row) {
             case kScreensaverEnableToggle:
             {
-                SMFMenuItem *it = [SMFMenuItem menuItem];
+                
                 [it setTitle:@"Custom Screensaver"];
                 [it setRightText:([[PREFS objectForKey:kCustomEnabledBool] boolValue]?@"Enabled":@"Disabled")];
-                return it;
+                
                 break;
             }
             case kScreensaverPreview:
             {
-                SMFMenuItem *it = [SMFMenuItem menuItem];
                 [it setTitle:@"Preview Screensaver"];
-                return it;
                 break;
             }
             case kScreensaverTimeout:
             {
-                SMFMenuItem *it = [SMFMenuItem menuItem];
                 [it setTitle:@"Screensaver Timeout"];
                 int time = [[ATVSettingsFacade singleton] screenSaverTimeout];
                 if (time==-1) {
@@ -173,28 +171,28 @@ enum  {
                 }
                 else
                     [it setRightText:[NSString stringWithFormat:@"%d min",time,nil]];
-                return it;
+                break;
             }
             case kScreensaverSelectFolder:
             {
-                SMFMenuItem *it = [SMFMenuItem menuItem];
+                it=[SMFMenuItem folderMenuItem];
                 [it setTitle:@"Select Folder"];
                 [it setRightText:[[PREFS objectForKey:kCustomFolderString] lastPathComponent]];
-                return it;
                 break;
             }
             default:
                 break;
         }
+        return it;
         
         
     }
     else if (row < (kScreensaverOptions+BC))
     {
-        SMFMenuItem *bookmark = [SMFMenuItem menuItem];
+        SMFMenuItem *bookmark = [SMFMenuItem folderMenuItem];
         row = row-kScreensaverOptions;
         if ([[_bookmarks objectAtIndex:row] isEqualToString:[PREFS objectForKey:kCustomFolderString]]) {
-            [bookmark setImage:[[SMFThemeInfo sharedTheme]selectedImage]];
+            [bookmark setSelectedImage:YES];
         }
         [bookmark setTitle:[_bookmarks objectAtIndex:row]];
         return bookmark;
@@ -210,12 +208,14 @@ enum  {
         else if([_selectedScreenSaverBundle isEqualToString:kSlideshowScreensaver])
         {
             if([[_screensavers objectAtIndex:row] isEqualToString:_selectedScreenSaver])
-                [screensaver setImage:[[SMFThemeInfo sharedTheme]selectedImage]];
+                //[screensaver setImage:[[SMFThemeInfo sharedTheme]selectedImage]];
+                [screensaver setSelectedImage:YES];
         }
         
         [screensaver setTitle:[_screensavers objectAtIndex:row]];
         return screensaver;
     }
+    
     return nil;
 }
 
@@ -318,6 +318,43 @@ enum  {
 -(void)wasExhumed
 {
     [self reload];
+}
+-(void)rightActionForRow:(long)row
+{
+    switch (row) {
+        case kScreensaverTimeout:
+        {
+            int timeout = [[ATVSettingsFacade singleton]screenSaverTimeout];
+            if (timeout<=-1) {
+                [[ATVSettingsFacade singleton]setScreenSaverTimeout:1];
+            }
+            else {
+                [[ATVSettingsFacade singleton]setScreenSaverTimeout:(timeout+1)];
+            }
+            [[self list] reload];
+            break;
+
+        }
+            
+
+    }
+}
+-(void)leftActionForRow:(long)row
+{
+    switch (row) {
+        case kScreensaverTimeout:
+        {
+            int timeout = [[ATVSettingsFacade singleton]screenSaverTimeout];
+            if (timeout<=1) {
+                [[ATVSettingsFacade singleton]setScreenSaverTimeout:-1];
+            }
+            else {
+                [[ATVSettingsFacade singleton]setScreenSaverTimeout:(timeout-1)];
+            }
+            [[self list] reload];
+            break;
+        }
+    }
 }
 #pragma mark SMFPasscodeController delegate methods
 - (void) textDidChange: (id) sender
